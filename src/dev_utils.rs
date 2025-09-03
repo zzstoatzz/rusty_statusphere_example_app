@@ -29,6 +29,9 @@ pub fn generate_dummy_statuses(count: usize) -> Vec<StatusFromDb> {
     ];
 
     let handles = [
+        "testuser1.bsky", // These will be followed users for testing
+        "testuser2.bsky",
+        "testuser3.bsky",
         "alice.test",
         "bob.test",
         "charlie.test",
@@ -38,9 +41,6 @@ pub fn generate_dummy_statuses(count: usize) -> Vec<StatusFromDb> {
         "grace.test",
         "henry.test",
         "iris.test",
-        "jack.test",
-        "karen.test",
-        "leo.test",
     ];
 
     let now = Utc::now();
@@ -60,9 +60,14 @@ pub fn generate_dummy_statuses(count: usize) -> Vec<StatusFromDb> {
             None
         };
 
+        // Extract username from handle for DID generation
+        let handle = handles[i % handles.len()];
+        let username = handle.split('.').next().unwrap_or(handle);
+        let did = format!("did:plc:{}", username);
+
         let mut status = StatusFromDb::new(
-            format!("at://did:plc:dummy{}/xyz.statusphere.status/dummy{}", i, i),
-            format!("did:plc:dummy{}", i % handles.len()),
+            format!("at://{}/xyz.statusphere.status/status{}", did, i),
+            did,
             emojis.choose(&mut rng).unwrap().to_string(),
         );
 
@@ -70,7 +75,7 @@ pub fn generate_dummy_statuses(count: usize) -> Vec<StatusFromDb> {
         status.started_at = started_at;
         status.expires_at = expires_at;
         status.indexed_at = started_at;
-        status.handle = Some(handles[i % handles.len()].to_string());
+        status.handle = Some(handle.to_string());
 
         statuses.push(status);
     }
@@ -83,5 +88,6 @@ pub fn generate_dummy_statuses(count: usize) -> Vec<StatusFromDb> {
 
 /// Check if dev mode is requested via query parameter
 pub fn is_dev_mode_requested(query: &str) -> bool {
-    query.contains("dev=true") || query.contains("dev=1")
+    let query_lower = query.to_lowercase();
+    query_lower.contains("dev=true") || query.contains("dev=1")
 }
